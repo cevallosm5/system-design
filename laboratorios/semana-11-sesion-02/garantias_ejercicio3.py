@@ -39,4 +39,73 @@ Corre las pruebas con:
 from dataclasses import dataclass
 
 
-# TODO: escribe Dinero y GarantiaDeReserva.
+@dataclass(frozen=True)
+class Dinero:
+    centavos: int
+    moneda: str
+
+    def __post_init__(self):
+        if self.centavos < 0:
+            raise ValueError("monto negativo")
+        if not isinstance(self.moneda, str) or len(self.moneda) != 3 or not self.moneda.isalpha():
+            raise ValueError("moneda invalida")
+
+    def sumar(self, otro):
+        if self.moneda != otro.moneda:
+            raise ValueError("monedas distintas")
+        return Dinero(self.centavos + otro.centavos, self.moneda)
+
+    def restar(self, otro):
+        if self.moneda != otro.moneda:
+            raise ValueError("monedas distintas")
+        resultado = self.centavos - otro.centavos
+        if resultado < 0:
+            raise ValueError("monto negativo")
+        return Dinero(resultado, self.moneda)
+
+    def es_mayor_que(self, otro):
+        if self.moneda != otro.moneda:
+            raise ValueError("monedas distintas")
+        return self.centavos > otro.centavos
+
+    def texto(self):
+        return f"{self.moneda} {self.centavos / 100:.2f}"
+
+
+@dataclass(eq=False)
+class GarantiaDeReserva:
+    id_garantia: str
+    id_reserva: str
+    titular: str
+    monto: Dinero
+    estado: str = "retenida"
+    cobrado: Dinero = None
+
+    def __post_init__(self):
+        if self.cobrado is None:
+            object.__setattr__(self, "cobrado", Dinero(0, self.monto.moneda))
+
+    def __eq__(self, otro):
+        if not isinstance(otro, GarantiaDeReserva):
+            return NotImplemented
+        return self.id_garantia == otro.id_garantia
+
+    def __hash__(self):
+        return hash(self.id_garantia)
+
+    def devolver(self):
+        if self.estado != "retenida":
+            raise ValueError("la garantia ya fue resuelta")
+        self.estado = "devuelta"
+        return self.monto
+
+    def cobrar(self, monto_cobrado):
+        if self.estado != "retenida":
+            raise ValueError("la garantia ya fue resuelta")
+        if monto_cobrado.moneda != self.monto.moneda:
+            raise ValueError("monedas distintas")
+        if monto_cobrado.es_mayor_que(self.monto):
+            raise ValueError("el cobro supera la garantia")
+        self.estado = "cobrada"
+        self.cobrado = monto_cobrado
+        return self.monto.restar(monto_cobrado)
