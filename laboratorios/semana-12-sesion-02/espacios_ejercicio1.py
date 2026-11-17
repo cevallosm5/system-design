@@ -105,10 +105,13 @@ class EspacioSimple(Recurso):
         self.capacidad = capacidad
         self.calendario = CalendarioDeCancha(nombre, FECHA)
 
-    # TODO 1: libres devuelve [self.nombre] si el calendario esta libre en
-    # esa franja, o una lista vacia si no. capacidad_total devuelve la
-    # capacidad.
+    def libres(self, inicio, fin):
+        if self.calendario.esta_libre(inicio, fin):
+            return [self.nombre]
+        return []
 
+    def capacidad_total(self):
+        return self.capacidad
 
 class GrupoDeRecursos(Recurso):
     def __init__(self, nombre):
@@ -118,10 +121,21 @@ class GrupoDeRecursos(Recurso):
     def agregar(self, hijo):
         self.hijos.append(hijo)
 
-    # TODO 2: libres junta, en orden, lo que devuelve libres de cada hijo.
-    # No preguntes de que clase es cada hijo.
+    def libres(self, inicio, fin):
+        encontrados = []
 
-    # TODO 3: capacidad_total suma la capacidad_total de cada hijo.
+        for hijo in self.hijos:
+            encontrados = encontrados + hijo.libres(inicio, fin)
+
+        return encontrados
+
+    def capacidad_total(self):
+        total = 0
+
+        for hijo in self.hijos:
+            total += hijo.capacidad_total()
+
+        return total
 
 
 def armar_campus():
