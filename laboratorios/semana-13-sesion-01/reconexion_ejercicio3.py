@@ -35,4 +35,56 @@ Esta vez no hay codigo de partida. Corre las pruebas con:
 """
 
 from canales_ejercicio1 import Canales
-# TODO: escribe aqui la clase CanalConHistorial.
+
+
+class CanalConHistorial(Canales):
+    def __init__(self, historial=50):
+        super().__init__()
+        self.tamano_historial = historial
+        self.numeros = {}
+        self.historiales = {}
+
+    def publicar(self, tema, mensaje):
+        numero = self.numeros.get(tema, 0) + 1
+        self.numeros[tema] = numero
+
+        texto = str(numero) + " " + mensaje
+        for conexion in self.suscritos.get(tema, []):
+            conexion.enviar(texto)
+
+        if tema not in self.historiales:
+            self.historiales[tema] = []
+        self.historiales[tema].append((numero, texto))
+        if self.tamano_historial <= 0:
+            self.historiales[tema].clear()
+        elif len(self.historiales[tema]) > self.tamano_historial:
+            exceso = len(self.historiales[tema]) - self.tamano_historial
+            del self.historiales[tema][:exceso]
+
+        return numero
+
+    def ultimo_numero(self, tema):
+        return self.numeros.get(tema, 0)
+
+    def reconectar(self, tema, conexion, ultimo_visto):
+        ultimo = self.ultimo_numero(tema)
+        if ultimo_visto > ultimo:
+            raise ValueError("numero desconocido")
+
+        historial = self.historiales.get(tema, [])
+
+        if ultimo_visto < ultimo:
+            numeros_retenidos = {numero for numero, _ in historial}
+            faltan_mensajes = any(
+                numero not in numeros_retenidos
+                for numero in range(ultimo_visto + 1, ultimo + 1)
+            )
+
+            if faltan_mensajes:
+                conexion.enviar("recargar")
+            else:
+                for numero, texto in historial:
+                    if numero > ultimo_visto:
+                        conexion.enviar(texto)
+
+        self.suscribir(tema, conexion)
