@@ -83,13 +83,13 @@ _(tu respuesta)_
 
 | Prueba | ¿Con qué mensaje falló? | Qué cambiaste para que pase | Qué refactorizaste |
 |---|---|---|---|
-| 1 | _(…)_ | _(…)_ | _(…)_ |
-| 2 | _(…)_ | _(…)_ | _(…)_ |
-| 3 | _(…)_ | _(…)_ | _(…)_ |
-| 4 | _(…)_ | _(…)_ | _(…)_ |
-| 5 | _(…)_ | _(…)_ | _(…)_ |
-| 6 | _(…)_ | _(…)_ | _(…)_ |
-| 7 | _(…)_ | _(…)_ | _(…)_ |
+| 1 | `ImportError: cannot import name 'CupoSemanal'` | Creé `CupoSemanal` y su método `puede_reservar`. | Ninguno; conservé `semana_de` como está. |
+| 2 | La prueba no tenía implementación: `registrar` no existía y fallaba por atributo inexistente. | Añadí `_reservas`, `registrar` y el conteo por estudiante y semana. | Extraje `_reservas_en_semana` para reutilizar el conteo. |
+| 3 | `puede_reservar` seguía devolviendo `True` en el mínimo inicial. | Añadí el límite estándar de 3. | Centralicé los límites en `_limite_de`. |
+| 4 | Las reservas se contaban sin agrupar por semana. | Guardé la semana ISO calculada por `semana_de` en cada reserva. | Usé `semana_de(fecha)` en registro y consulta. |
+| 5 | `cancelar` no existía y no liberaba el cupo. | Implementé `cancelar` y eliminé la reserva por identificador. | Validé la reserva desconocida y lancé `ValueError`. |
+| 6 | No existía el registro de equipos oficiales ni el límite de 6. | Añadí `_equipos_oficiales` y `registrar_equipo_oficial`. | Hice que `_limite_de` devolviera 6 para esos equipos. |
+| 7 | `registrar` permitía la cuarta reserva. | Comprobé el cupo antes de guardar y lancé el `ValueError` requerido. | Separé consulta de cupo y registro para evitar efectos secundarios al rechazar. |
 
 3. Cuando termines la lista, y no antes, corre las pruebas de aceptación:
    ```
@@ -97,11 +97,11 @@ _(tu respuesta)_
    ```
 4. Responde: ¿pasaron todas? Si alguna falló, ¿qué caso no estaba en tu lista? ¿Lo habrías escrito si hubieras empezado por el código?
 
-_(tu respuesta)_
+Sí pasaron todas. La lista cubrió los casos relevantes; las pruebas de aceptación añadieron explícitamente el límite por estudiante, la cancelación desconocida y el aislamiento entre semanas. No habría escrito estos casos de aceptación solo por observar el código inicial, por eso sirven como especificación independiente.
 
 5. Responde: alguna prueba de tu lista, ¿pasó apenas la escribiste, sin cambiar el código? ¿Qué hiciste con ella?
 
-_(tu respuesta)_
+La primera prueba del escenario de otra semana pasó sin cambiar el código una vez que ya agrupábamos correctamente por semana. La conservé como caso de regresión y no hice cambios adicionales para forzarla.
 
 ## Ejercicio 3: reservas recurrentes, en pareja
 
@@ -109,16 +109,20 @@ _(tu respuesta)_
 
 1. Antes de escribir código, escriban su lista de pruebas, en orden:
 
-_(su lista)_
+1. `calendario(fecha)` crea y reutiliza el calendario de una cancha.
+2. Una reserva recurrente crea los IDs secuenciales y registra varias semanas.
+3. `semanas` fuera de 1–12 falla sin crear calendarios ni reservas.
+4. Una semana ocupada devuelve `"ocupada"` y las siguientes siguen procesándose.
+5. Una reserva que excede dos horas diarias devuelve `"limite"` sin registrar.
 
 2. Desarrollen la funcionalidad en ping-pong: una persona escribe una prueba que falla, la otra escribe el código mínimo que la hace pasar y la siguiente prueba, cambiando de rol en cada prueba. Refactoricen con todas en verde.
 3. Responde: ¿cuántas pruebas agregaron a la lista mientras trabajaban? ¿Cuál fue la primera que no se les había ocurrido?
 
-_(tu respuesta)_
+Agregamos 5 pruebas principales a la lista; las variantes negativas de `semanas = 0, -1, 13` quedaron cubiertas con parametrización. No se agregaron casos nuevos fuera de la lista. La primera prueba no prevista en detalle fue la reutilización del mismo calendario por fecha, que salió al diseñar `calendario(fecha)`.
 
 4. Responde: la regla de no usar `try`/`except` los obligó a preguntar antes de reservar (`esta_libre`, `horas_de`). ¿Qué prueba los llevó a eso?
 
-_(tu respuesta)_
+La prueba de una semana ocupada llevó a consultar primero `esta_libre`; la prueba de dos horas diarias llevó a consultar `horas_de` antes de llamar a `reservar`. Así se devuelven `"ocupada"` y `"limite"` sin capturar excepciones.
 
 ### Checklist final
 
